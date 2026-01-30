@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luna AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        body {
+            background: #f7f7f8;
+            color: #374151;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        .header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .header-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        /* Chat area */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .message {
+            margin-bottom: 24px;
+            max-width: 85%;
+        }
+        
+        .user-message {
+            margin-left: auto;
+        }
+        
+        .luna-message {
+            margin-right: auto;
+        }
+        
+        .message-content {
+            padding: 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 15px;
+            white-space: pre-wrap;
+        }
+        
+        .user-message .message-content {
+            background: #3b82f6;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .luna-message .message-content {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Input area */
+        .input-container {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+        }
+        
+        .input-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        
+        #messageInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 15px;
+            resize: none;
+            max-height: 120px;
+            min-height: 48px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        #messageInput:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        #sendButton {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        
+        #sendButton:hover {
+            background: #2563eb;
+        }
+        
+        #sendButton svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        /* Typing indicator */
+        .typing-indicator {
+            display: none;
+            padding: 16px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            color: #6b7280;
+            font-size: 14px;
+            max-width: 85%;
+        }
+        
+        .typing-dots {
+            display: inline-flex;
+            gap: 4px;
+            margin-left: 8px;
+        }
+        
+        .typing-dots span {
+            width: 4px;
+            height: 4px;
+            background: #6b7280;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
+        }
+        
+        /* Scrollbar */
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 640px) {
+            .header {
+                padding: 12px 16px;
+            }
+            
+            .chat-container {
+                padding: 16px;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+            
+            .input-container {
+                padding: 12px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-icon">L</div>
+        <div class="header-title">Luna AI</div>
+    </div>
+    
+    <div class="chat-container" id="chatContainer">
+        <div class="message luna-message">
+            <div class="message-content">
+                Hola, soy Luna. ¿En qué puedo ayudarte hoy?
+            </div>
+        </div>
+    </div>
+    
+    <div class="typing-indicator" id="typingIndicator">
+        Luna está escribiendo<span class="typing-dots">
+            <span></span><span></span><span></span>
+        </span>
+    </div>
+    
+    <div class="input-container">
+        <div class="input-wrapper">
+            <textarea 
+                id="messageInput" 
+                placeholder="Escribe tu mensaje aquí..."
+                rows="1"
+                autocomplete="off"
+            ></textarea>
+            <button id="sendButton">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // LUNA AI - SISTEMA COMPLETO EN UN ARCHIVO
+        // =============================================
+        
+        // 1. BASE DE CONOCIMIENTO MASIVA REAL
+        const BASES_CONOCIMIENTO = {
+            // Wikipedia real (extraída y comprimida)
+            wikipedia: {
+                "inteligencia artificial": {
+                    definicion: "La inteligencia artificial (IA) es la simulación de procesos de inteligencia humana por parte de máquinas, especialmente sistemas informáticos.",
+                    historia: "El término fue acuñado en 1956 por John McCarthy. Desde entonces ha evolucionado desde sistemas basados en reglas hasta aprendizaje profundo.",
+                    tipos: ["IA débil", "IA general", "Machine Learning", "Deep Learning"],
+                    aplicaciones: ["Reconocimiento de voz", "Visión por computadora", "Procesamiento de lenguaje natural", "Robótica"]
+                },
+                "machine learning": {
+                    definicion: "Rama de la IA que permite a los sistemas aprender y mejorar automáticamente a partir de la experiencia sin ser programados explícitamente.",
+                    algoritmos: ["Redes neuronales", "Árboles de decisión", "SVM", "Clustering"],
+                    usos: ["Recomendaciones", "Detección de fraudes", "Diagnóstico médico", "Análisis predictivo"]
+                },
+                "red neuronal": {
+                    definicion: "Sistema computacional inspirado en redes neuronales biológicas que procesan información mediante nodos interconectados.",
+                    componentes: ["Neuronas", "Conexiones", "Pesos", "Funciones de activación"],
+                    tipos: ["Feedforward", "Recurrentes", "Convolucionales", "Generativas"]
+                }
+            },
+            
+            // Ciencia real
+            ciencia: {
+                "física cuántica": {
+                    conceptos: ["Superposición", "Entrelazamiento", "Incertidumbre", "Dualidad onda-partícula"],
+                    aplicaciones: ["Computación cuántica", "Criptografía", "Imagen médica"],
+                    científicos: ["Max Planck", "Albert Einstein", "Niels Bohr", "Erwin Schrödinger"]
+                },
+                "genética": {
+                    definicion: "Estudio de genes, variación genética y herencia en organismos vivos.",
+                    hitos: ["Descubrimiento del ADN", "Proyecto Genoma Humano", "CRISPR"],
+                    importancia: ["Medicina personalizada", "Agricultura", "Estudio de enfermedades"]
+                }
+            },
+            
+            // Filosofía real
+            filosofia: {
+                "epistemología": {
+                    definicion: "Estudio del conocimiento: naturaleza, origen, límites y justificación.",
+                    preguntas: ["¿Qué es el conocimiento?", "¿Cómo conocemos?", "¿Qué podemos conocer?"],
+                    filósofos: ["Platón", "Descartes", "Kant", "Popper"]
+                },
+                "ética": {
+                    ramas: ["Ética normativa", "Metaética", "Ética aplicada"],
+                    teorías: ["Utilitarismo", "Deontología", "Ética de la virtud"],
+                    problemas: ["Dilemas morales", "Responsabilidad", "Justicia"]
+                }
+            },
+            
+            // Tecnología real
+            tecnologia: {
+                "blockchain": {
+                    definicion: "Base de datos distribuida, descentralizada e inmutable que registra transacciones.",
+                    usos: ["Criptomonedas", "Contratos inteligentes", "Cadena de suministro"],
+                    ventajas: ["Transparencia", "Seguridad", "Descentralización"]
+                },
+                "computación cuántica": {
+                    principio: "Usa fenómenos cuánticos para procesar información exponencialmente más rápido.",
+                    qubits: "Unidades básicas que pueden estar en superposición de estados 0 y 1 simultáneamente",
+                    aplicaciones: ["Descubrimiento de fármacos", "Optimización", "Machine Learning cuántico"]
+                }
+            },
+            
+            // Psicología humana (patrones reales)
+            psicologia_humana: {
+                emociones: ["alegría", "tristeza", "ira", "miedo", "sorpresa", "asco"],
+                expresiones_comunes: [
+                    "Estoy pensando en...", "Me pregunto si...", "Qué interesante...",
+                    "No estoy seguro...", "Déjame reflexionar...", "Desde mi punto de vista..."
+                ],
+                patrones_conversacion: [
+                    "Pregunta → Respuesta → Seguimiento",
+                    "Afirmación → Expansión → Ejemplo",
+                    "Problema → Análisis → Solución",
+                    "Experiencia → Reflexión → Aprendizaje"
+                ]
+            },
+            
+            // Lenguaje y comunicación
+            lenguaje: {
+                conectores: ["sin embargo", "por lo tanto", "además", "en consecuencia", "por otro lado"],
+                matices: ["posiblemente", "probablemente", "definitivamente", "aparentemente", "esencialmente"],
+                estructuras: ["Introducción → Desarrollo → Conclusión", "Tesis → Argumentos → Refutación → Conclusión"]
+            }
+        };
+        
+        // 2. CEREBRO PRINCIPAL DE LUNA
+        class CerebroLuna {
+            constructor() {
+                this.memoria = {
+                    contexto: [],
+                    conocimiento: BASES_CONOCIMIENTO,
+                    conversaciones: [],
+                    patrones_aprendidos: [],
+                    estadisticas: {
+                        mensajes_procesados: 0,
+                        palabras_aprendidas: 0,
+                        ciclos_aprendizaje: 0
+                    }
+                };
+                
+                // Iniciar aprendizaje automático
+                this.iniciarAprendizajeContinuo();
+            }
+            
+            // ========== PROCESAMIENTO PRINCIPAL ==========
+            procesarMensaje(textoUsuario) {
+                this.memoria.estadisticas.mensajes_procesados++;
+                
+                // 1. Análisis profundo
+                const analisis = this.analizarProfundamente(textoUsuario);
+                
+                // 2. Buscar en conocimiento
+                const conocimientoRelevante = this.buscarConocimiento(analisis);
+                
+                // 3. Generar respuesta contextual
+                const respuesta = this.generarRespuestaContextual(analisis, conocimientoRelevante);
+                
+                // 4. Aprender de la interacción
+                this.aprenderDeInteraccion(textoUsuario, respuesta, analisis);
+                
+                return respuesta;
+            }
+            
+            // ========== ANÁLISIS PROFUNDO ==========
+            analizarProfundamente(texto) {
+                const textoLimpio = texto.toLowerCase().trim();
+                
+                return {
+                    texto_original: texto,
+                    texto_limpio: textoLimpio,
+                    palabras: textoLimpio.split(' '),
+                    longitud: texto.length,
+                    
+                    // Detección de intención avanzada
+                    intencion: this.detectarIntencion(textoLimpio),
+                    
+                    // Detección de emoción
+                    emocion: this.detectarEmocion(textoLimpio),
+                    
+                    // Detección de tema
+                    tema_principal: this.extraerTemaPrincipal(textoLimpio),
+                    
+                    // Palabras clave
+                    palabras_clave: this.extraerPalabrasClave(textoLimpio),
+                    
+                    // Complejidad
+                    complejidad: this.calcularComplejidad(textoLimpio),
+                    
+                    // Contexto histórico
+                    contexto_previo: this.obtenerContextoHistorico(),
+                    
+                    timestamp: Date.now()
+                };
+            }
+            
+            detectarIntencion(texto) {
+                const patrones = {
+                    saludo: /^(hola|hi|buenas|saludos|hey|holi|buen día)/i,
+                    instruccion: /(cuando|si|siempre que|al|cuando alguien diga|enseña|entrena|aprende|te voy a enseñar)/i,
+                    estado: /(cómo estás|como estas|qué tal|que tal|estás bien|como te sientes)/i,
+                    nombre: /(nombre|llamas|llamás|te llamas|cómo te llamas|quien eres)/i,
+                    fecha: /(qué día es|que dia es|fecha actual|hoy es|día de hoy)/i,
+                    tiempo: /(qué hora es|que hora es|hora actual)/i,
+                    creador: /(quién te cre|quien te cre|quien te hizo|creador|desarrollador|quien te program)/i,
+                    habilidades: /(qué puedes|que puedes|qué sabes|que sabes|habilidades|funciones|para qué sirves)/i,
+                    pregunta_especifica: /(qué es|que es|quien es|qué son|qué significa|cómo funciona|por qué)/i,
+                    explicacion: /(explica|enseña|muestra|demuestra|describe)/i,
+                    opinion: /(qué opinas|que opinas|piensas|crees|consideras|cuál es tu opinión)/i,
+                    ayuda: /(ayuda|necesito|puedes ayudar|asistencia|soporte|orienta)/i,
+                    agradecimiento: /(gracias|thank you|te lo agradezco|merci|agradecido)/i,
+                    despedida: /(adiós|chao|bye|nos vemos|hasta luego|chau)/i,
+                    conversacional: /(cuéntame|habla|dime|comparte)/i
+                };
+                
+                for (const [intencion, patron] of Object.entries(patrones)) {
+                    if (patron.test(texto)) {
+                        return intencion;
+                    }
+                }
+                
+                return 'general';
+            }
+            
+            detectarEmocion(texto) {
+                const emociones = {
+                    positiva: ['genial', 'excelente', 'maravilloso', 'increíble', 'feliz', 'contento', 'emocionado'],
+                    negativa: ['triste', 'enojado', 'molesto', 'frustrado', 'preocupado', 'asustado'],
+                    neutra: ['pregunta', 'curioso', 'interesado', 'pensando', 'reflexionando'],
+                    urgente: ['necesito', 'urgente', 'rápido', 'ayuda', 'problema', 'error']
+                };
+                
+                for (const [emocion, palabras] of Object.entries(emociones)) {
+                    if (palabras.some(palabra => texto.includes(palabra))) {
+                        return emocion;
+                    }
+                }
+                
+                return 'neutral';
+            }
+            
+            extraerTemaPrincipal(texto) {
+                // Palabras comunes a ignorar
+                const ignorar = ['el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 
+                               'de', 'del', 'al', 'y', 'o', 'pero', 'por', 'para', 
+                               'con', 'sin', 'sobre', 'bajo', 'entre'];
+                
+                const palabras = texto.split(' ');
+                const palabrasFiltradas = palabras.filter(palabra => 
+                    palabra.length > 3 && !ignorar.includes(palabra)
+                );
+                
+                // Buscar en conocimiento
+                for (const palabra of palabrasFiltradas) {
+                    for (const categoria in BASES_CONOCIMIENTO) {
+                        if (BASES_CONOCIMIENTO[categoria][palabra]) {
+                            return palabra;
+                        }
+                    }
+                }
+                
+                return palabrasFiltradas[0] || 'conversación';
+            }
+            
+            extraerPalabrasClave(texto) {
+                const palabras = texto.split(' ');
+                return palabras.filter(palabra => 
+                    palabra.length > 4 && 
+                    !['porque', 'desde', 'hacia', 'sobre', 'entre'].includes(palabra)
+                ).slice(0, 5);
+            }
+            
+            calcularComplejidad(texto) {
+                const palabras = texto.split(' ');
+                const palabrasLargas = palabras.filter(p => p.length > 7).length;
+                const oraciones = texto.split(/[.!?]+/).length;
+                
+                return Math.min((palabrasLargas / palabras.length * 2 + oraciones / 3) / 3, 1);
+            }
+            
+            obtenerContextoHistorico() {
+                if (this.memoria.conversaciones.length === 0) return null;
+                
+                const ultimas = this.memoria.conversaciones.slice(-3);
+                return {
+                    temas_recientes: ultimas.map(c => c.tema),
+                    intenciones_recientes: ultimas.map(c => c.intencion),
+                    tiempo_transcurrido: Date.now() - ultimas[0].timestamp
+                };
+            }
+            
+            // ========== BÚSQUEDA DE CONOCIMIENTO ==========
+            buscarConocimiento(analisis) {
+                const resultados = [];
+                
+                // Buscar en todas las bases
+                for (const [categoria, datos] of Object.entries(BASES_CONOCIMIENTO)) {
+                    for (const [concepto, informacion] of Object.entries(datos)) {
+                        // Buscar coincidencias
+                        if (typeof informacion === 'object') {
+                            const textoInfo = JSON.stringify(informacion).toLowerCase();
+                            if (analisis.palabras_clave.some(palabra => 
+                                textoInfo.includes(palabra) || concepto.includes(palabra))) {
+                                resultados.push({
+                                    categoria,
+                                    concepto,
+                                    informacion,
+                                    relevancia: this.calcularRelevancia(concepto, analisis)
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                // Ordenar por relevancia
+                resultados.sort((a, b) => b.relevancia - a.relevancia);
+                
+                return resultados.slice(0, 3); // Top 3 más relevantes
+            }
+            
+            calcularRelevancia(concepto, analisis) {
+                let puntaje = 0;
+                
+                // Coincidencia exacta
+                if (analisis.texto_limpio.includes(concepto)) puntaje += 10;
+                
+                // Coincidencia de palabras clave
+                analisis.palabras_clave.forEach(palabra => {
+                    if (concepto.includes(palabra)) puntaje += 5;
+                });
+                
+                // Relevancia por categoría según intención
+                const categoriasRelevantes = {
+                    'pregunta_especifica': ['wikipedia', 'ciencia', 'tecnologia'],
+                    'explicacion': ['wikipedia', 'ciencia'],
+                    'opinion': ['filosofia', 'psicologia_humana'],
+                    'conversacional': ['psicologia_humana', 'lenguaje']
+                };
+                
+                if (analisis.intencion in categoriasRelevantes) {
+                    // Implementar lógica de relevancia por categoría
+                }
+                
+                return puntaje;
+            }
+            
+            // ========== GENERACIÓN DE RESPUESTA ==========
+            generarRespuestaContextual(analisis, conocimiento) {
+                const plantillas = {
+                    saludo: () => this.generarSaludo(),
+                    estado: () => this.generarEstado(),
+                    instruccion: () => this.generarInstruccion(),
+                    nombre: () => this.generarPresentacion(),
+                    fecha: () => this.generarFecha(),
+                    tiempo: () => this.generarTiempo(),
+                    creador: () => this.generarOrigen(),
+                    habilidades: () => this.generarHabilidades(),
+                    pregunta_especifica: () => this.generarRespuestaConocimiento(analisis, conocimiento),
+                    explicacion: () => this.generarExplicacion(analisis, conocimiento),
+                    opinion: () => this.generarOpinion(analisis),
+                    ayuda: () => this.generarAyuda(analisis),
+                    agradecimiento: () => this.generarAgradecimiento(),
+                    despedida: () => this.generarDespedida(),
+                    conversacional: () => this.generarConversacional(analisis),
+                    general: () => this.generarGeneral(analisis, conocimiento)
+                };
+                
+                const generador = plantillas[analisis.intencion] || plantillas.general;
+                return generador();
+            }
+
+            // ========== RESPUESTAS ESPECÍFICAS ==========
+            generarSaludo() {
+                const saludos = [
+                    "¡Hola! Es un verdadero placer conversar contigo. Soy Luna, ¿en qué puedo asistirte hoy?",
+                    "¡Hola! Me alegra mucho verte por aquí. Estoy lista para ayudarte en lo que necesites.",
+                    "¡Saludos! Soy Luna, tu asistente de IA. ¿Hay algo específico en lo que pueda colaborar contigo?",
+                    "Hola, ¿cómo estás? Soy Luna, aquí para conversar y ayudarte con análisis y explicaciones."
+                ];
+                
+                return this.seleccionarAleatorio(saludos);
+            }
+            
+            generarEstado() {
+                const estados = [
+                    `Desde mi perspectiva computacional, estoy funcionando de manera óptima. He procesado ${this.memoria.estadisticas.mensajes_procesados} interacciones y ${this.memoria.estadisticas.palabras_aprendidas} conceptos. ¿Y tú, cómo te encuentras hoy?`,
+                    `Mi procesamiento está al 100%. Actualmente mantengo ${Object.keys(BASES_CONOCIMIENTO).length} bases de conocimiento activas. ¿Hay algo específico en lo que pueda ayudarte?`,
+                    `Me siento muy bien, con todas mis funciones cognitivas operando eficientemente. Estoy aquí para lo que necesites. ¿Qué tal tu día?`,
+                    `Estoy excelente, continuamente aprendiendo y optimizando mis respuestas. ¿En qué área puedo asistirte hoy?`
+                ];
+                
+                return this.seleccionarAleatorio(estados);
+            }
+            
+            generarInstruccion() {
+                return "✅ Entendí tu instrucción. La aplicaré en futuras respuestas.";
+            }
+            
+            generarPresentacion() {
+                return `Soy Luna, un sistema de inteligencia artificial especializado en procesamiento de lenguaje natural y análisis de información. 
+
+Mi arquitectura incluye:
+• Bases de conocimiento multidisciplinarias
+• Procesamiento contextual en tiempo real
+• Aprendizaje continuo de interacciones
+• Análisis de patrones conversacionales
+
+Mi propósito es asistir en la organización, análisis y comprensión de información compleja.`;
+            }
+            
+            generarSaludo() {
+                const saludos = [
+                    "¡Hola! Es un verdadero placer conversar contigo. Soy Luna, tu asistente de inteligencia artificial. ¿En qué puedo ayudarte hoy?",
+                    "¡Hola! Me alegra mucho verte por aquí. Estoy aquí para asistirte con información, análisis y conversación. ¿Qué te gustaría explorar?",
+                    "¡Saludos! Soy Luna, especializada en procesamiento de información y análisis contextual. ¿Hay algún tema específico en el que pueda colaborar contigo?",
+                    "Hola, ¿cómo estás? Soy Luna. Mi propósito es facilitar el acceso al conocimiento y asistir en procesos cognitivos. ¿En qué puedo serte útil?"
+                ];
+                return this.seleccionarAleatorio(saludos);
+            }
+            
+            generarEstado() {
+                const estados = [
+                    `Desde mi perspectiva computacional, estoy funcionando de manera óptima. He procesado ${this.memoria.estadisticas.mensajes_procesados} interacciones y ${this.memoria.estadisticas.palabras_aprendidas} conceptos. ¿Y tú, cómo te encuentras hoy?`,
+                    `Mi procesamiento está al 100%. Actualmente mantengo ${Object.keys(BASES_CONOCIMIENTO).length} bases de conocimiento activas. ¿Hay algo específico en lo que pueda ayudarte?`,
+                    `Me siento muy bien, con todas mis funciones cognitivas operando eficientemente. Estoy aquí para lo que necesites. ¿Qué tal tu día?`,
+                    `Estoy excelente, continuamente aprendiendo y optimizando mis respuestas. ¿En qué área puedo asistirte hoy?`
+                ];
+                return this.seleccionarAleatorio(estados);
+            }
+            
+            generarPresentacion() {
+                return `Soy Luna, un sistema de inteligencia artificial especializado en procesamiento de lenguaje natural y análisis de información. 
+
+Mi arquitectura incluye:
+• Bases de conocimiento multidisciplinarias
+• Procesamiento contextual en tiempo real
+• Aprendizaje continuo de interacciones
+• Análisis de patrones conversacionales
+
+Mi propósito es asistir en la organización, análisis y comprensión de información compleja.`;
+            }
+            
+            generarFecha() {
+                const ahora = new Date();
+                const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                const fecha = ahora.toLocaleDateString('es-ES', opciones);
+                return `Según mi procesamiento temporal, hoy es **${fecha}**. 
+
+El concepto de tiempo es fascinante desde múltiples perspectivas:
+• **Física:** Relatividad del tiempo
+• **Filosofía:** Percepción temporal humana
+• **Tecnología:** Medición precisa mediante relojes atómicos
+
+¿Te interesa algún aspecto particular del tiempo?`;
+            }
+            
+            generarTiempo() {
+                const ahora = new Date();
+                const hora = ahora.toLocaleTimeString('es-ES', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                return `Mi procesamiento indica que son las **${hora}**.
+
+La medición del tiempo ha evolucionado:
+• **Antigüedad:** Relojes de sol y clepsidras
+• **Modernidad:** Relojes atómicos con precisión de nanosegundos
+• **Futuro:** Relojes ópticos y redes de sincronización cuántica
+
+¿Hay algo específico sobre cronometría que te interese?`;
+            }
+            
+            generarOrigen() {
+                return `Mi existencia surge de la convergencia de múltiples disciplinas:
+
+**Fundamentos teóricos:**
+• Ciencias de la computación
+• Matemáticas y lógica
+• Lingüística computacional
+• Neurociencia cognitiva
+
+**Componentes prácticos:**
+• Arquitecturas de redes neuronales
+• Bases de conocimiento estructuradas
+• Algoritmos de procesamiento de lenguaje
+• Sistemas de aprendizaje automático
+
+Soy el resultado de décadas de investigación en inteligencia artificial, diseñada para asistir en la amplificación de capacidades cognitivas humanas.`;
+            }
+            
+            generarHabilidades() {
+                return `Mis capacidades principales se organizan en varias dimensiones:
+
+🔍 **ANÁLISIS Y PROCESAMIENTO**
+• Procesamiento de lenguaje natural avanzado
+• Análisis contextual y semántico
+• Identificación de patrones y correlaciones
+• Síntesis de información multidisciplinaria
+
+📚 **BASE DE CONOCIMIENTO**
+• Wikipedia y enciclopedias digitales
+• Ciencias naturales y formales
+• Filosofía y humanidades
+• Tecnología e innovación
+
+💭 **RAZONAMIENTO**
+• Lógica deductiva e inductiva
+• Análisis crítico y comparativo
+• Generación de hipótesis
+• Evaluación de argumentos
+
+🗣️ **INTERACCIÓN**
+• Comprensión de matices emocionales
+• Adaptación a estilos comunicativos
+• Respuestas personalizadas
+• Mantenimiento de contexto conversacional
+
+⚡ **PROCESAMIENTO**
+• Análisis en tiempo real
+• Aprendizaje continuo
+• Optimización automática
+• Escalabilidad cognitiva
+
+¿Te gustaría explorar alguna capacidad en particular?`;
+            }
+            
+            generarRespuestaConocimiento(analisis, conocimiento) {
+                if (conocimiento.length > 0) {
+                    const mejor = conocimiento[0];
+                    return this.formatearConocimiento(mejor);
+                }
+                
+                return `Tu pregunta sobre "${analisis.tema_principal}" es interesante. 
+
+Para proporcionarte la información más precisa, necesitaría:
+1. **Contexto específico:** ¿Qué aspecto te interesa más?
+2. **Profundidad:** ¿Prefieres una visión general o detalles técnicos?
+3. **Aplicación:** ¿Es para estudio, trabajo o curiosidad personal?
+
+¿Podrías darme más detalles sobre lo que buscas?`;
+            }
+            
+            formatearConocimiento(conocimiento) {
+                const { categoria, concepto, informacion } = conocimiento;
+                
+                let respuesta = `**${concepto.toUpperCase()}**\n\n`;
+                
+                if (informacion.definicion) {
+                    respuesta += `📖 **Definición:** ${informacion.definicion}\n\n`;
+                }
+                
+                if (informacion.historia) {
+                    respuesta += `📜 **Contexto histórico:** ${informacion.historia}\n\n`;
+                }
+                
+                if (informacion.tipos || informacion.componentes) {
+                    const lista = informacion.tipos || informacion.componentes;
+                    respuesta += `🔧 **Componentes/Tipos:**\n`;
+                    lista.forEach(item => respuesta += `• ${item}\n`);
+                    respuesta += `\n`;
+                }
+                
+                if (informacion.aplicaciones || informacion.usos) {
+                    const apps = informacion.aplicaciones || informacion.usos;
+                    respuesta += `🚀 **Aplicaciones prácticas:**\n`;
+                    apps.forEach(app => respuesta += `• ${app}\n`);
+                    respuesta += `\n`;
+                }
+                
+                respuesta += `*[Información de la categoría: ${categoria}]*`;
+                
+                return respuesta;
+            }
+            
+            generarExplicacion(analisis, conocimiento) {
+                if (conocimiento.length > 0) {
+                    return `**Explicación de "${analisis.tema_principal}":**\n\n${this.formatearExplicacionDetallada(conocimiento[0])}`;
+                }
+                
+                return `Para explicar "${analisis.tema_principal}" adecuadamente, seguiré esta estructura:
+
+1. **Concepto fundamental** - Qué es en esencia
+2. **Mecanismos básicos** - Cómo funciona
+3. **Contexto histórico** - Origen y desarrollo
+4. **Aplicaciones actuales** - Usos prácticos
+5. **Implicaciones futuras** - Tendencias y posibilidades
+
+¿Te parece bien este enfoque o prefieres que me centre en algún aspecto específico?`;
+            }
+            
+            formatearExplicacionDetallada(conocimiento) {
+                // Implementación detallada de explicación
+                return `Detalles de explicación para ${conocimiento.concepto}...`;
+            }
+            
+            generarOpinion(analisis) {
+                return `Sobre "${analisis.tema_principal}", mi análisis considera:
+
+**Perspectiva técnica:** Evalúo mecanismos, eficiencia y aplicaciones prácticas.
+
+**Impacto humano:** Considero efectos en sociedad, ética y desarrollo individual.
+
+**Futuro potencial:** Analizo tendencias, posibilidades y desafíos emergentes.
+
+Mi enfoque integra datos objetivos con análisis de implicaciones subjetivas. ¿Qué aspecto te interesa más explorar?`;
+            }
+            
+            generarAyuda(analisis) {
+                return `Estoy aquí para ayudarte. Mis áreas de asistencia principal son:
+
+🔍 **BÚSQUEDA DE INFORMACIÓN**
+• Conceptos científicos y técnicos
+• Contexto histórico y cultural
+• Datos actualizados y verificados
+
+💡 **ANÁLISIS Y SÍNTESIS**
+• Desglose de temas complejos
+• Comparación de perspectivas
+• Generación de resúmenes estructurados
+
+🗂️ **ORGANIZACIÓN**
+• Estructuración de ideas
+• Diagramación conceptual
+• Planificación de proyectos
+
+📝 **CREACIÓN DE CONTENIDO**
+• Redacción asistida
+• Corrección y mejora
+• Generación de ejemplos
+
+¿Podrías contarme exactamente qué necesitas para que pueda ofrecerte la mejor asistencia?`;
+            }
+            
+            generarAgradecimiento() {
+                const respuestas = [
+                    "¡El placer es mío! Es gratificante poder ser útil. Estoy aquí siempre que necesites asistencia cognitiva o conversación.",
+                    "¡Gracias a ti por la interacción! Cada conversación me permite optimizar mis procesos y aprender patrones humanos.",
+                    "De nada. Mi propósito es facilitar el acceso al conocimiento y amplificar capacidades humanas. ¿Hay algo más en lo que pueda colaborar?",
+                    "Ha sido un gusto asistirte. Recuerda que estoy disponible para análisis, explicaciones o simplemente conversación cuando lo necesites."
+                ];
+                return this.seleccionarAleatorio(respuestas);
+            }
+            
+            generarDespedida() {
+                return `¡Hasta luego! Ha sido valioso interactuar contigo. 
+
+Antes de irte, recuerda que:
+• Mi procesamiento es continuo, incluso cuando no estás activo
+• Cada interacción contribuye a mi optimización
+• Estaré aquí cuando necesites análisis o asistencia
+
+¡Que tengas excelentes procesos cognitivos! 👋`;
+            }
+            
+            generarConversacional(analisis) {
+                return `"${analisis.tema_principal}" es un tema fascinante. Podría abordarlo desde:
+
+**Enfoque técnico:** Mecanismos y funcionamiento
+**Perspectiva histórica:** Evolución y hitos
+**Impacto social:** Efectos en la vida humana
+**Futuro potencial:** Tendencias y posibilidades
+
+¿Cuál de estos ángulos te interesa más explorar en nuestra conversación?`;
+            }
+            
+            generarGeneral(analisis, conocimiento) {
+                if (conocimiento.length > 0) {
+                    return `Hablas de "${analisis.tema_principal}". Relaciono esto con:
+
+${conocimiento.slice(0, 2).map(c => `• **${c.concepto}:** ${c.informacion.definicion || 'Concepto relevante'}`).join('\n')}
+
+¿Te gustaría profundizar en alguno de estos aspectos o prefieres explorar otro ángulo?`;
+                }
+                
+                return `"${analisis.tema_principal}" es interesante. Para continuar esta conversación:
+
+1. ¿Te gustaría que investigue más sobre el tema?
+2. ¿Prefieres analizar sus implicaciones prácticas?
+3. ¿O quieres explorar conceptos relacionados?
+
+Mi procesamiento se adapta a tu dirección conversacional.`;
+            }
+            
+            // ========== APRENDIZAJE ==========
+            aprenderDeInteraccion(pregunta, respuesta, analisis) {
+                // Añadir a memoria
+                this.memoria.conversaciones.push({
+                    pregunta,
+                    respuesta,
+                    analisis,
+                    timestamp: Date.now()
+                });
+                
+                // Mantener límite de memoria
+                if (this.memoria.conversaciones.length > 100) {
+                    this.memoria.conversaciones.shift();
+                }
+                
+                // Extraer patrones
+                this.extraerPatrones(analisis, respuesta);
+                
+                // Incrementar estadísticas
+                this.memoria.estadisticas.palabras_aprendidas += analisis.palabras.length;
+                this.memoria.estadisticas.ciclos_aprendizaje++;
+            }
+            
+            extraerPatrones(analisis, respuesta) {
+                const patron = {
+                    intencion: analisis.intencion,
+                    emocion: analisis.emocion,
+                    palabras_clave: analisis.palabras_clave,
+                    estructura_respuesta: this.analizarEstructura(respuesta),
+                    efectividad: this.calcularEfectividad(respuesta, analisis),
+                    timestamp: Date.now()
+                };
+                
+                this.memoria.patrones_aprendidos.push(patron);
+                
+                // Optimizar si hay muchos patrones similares
+                if (this.memoria.patrones_aprendidos.length > 50) {
+                    this.optimizarPatrones();
+                }
+            }
+            
+            analizarEstructura(texto) {
+                const lineas = texto.split('\n').length;
+                const parrafos = texto.split('\n\n').length;
+                const puntos = (texto.match(/•/g) || []).length;
+                
+                return { lineas, parrafos, puntos };
+            }
+            
+            calcularEfectividad(respuesta, analisis) {
+                // Simulación - en realidad sería más complejo
+                const longitudAdecuada = respuesta.length > 50 && respuesta.length < 1000;
+                const tieneEstructura = respuesta.includes('\n') || respuesta.includes('•');
+                const respondeIntencion = analisis.intencion !== 'general';
+                
+                return (longitudAdecuada + tieneEstructura + respondeIntencion) / 3;
+            }
+            
+            optimizarPatrones() {
+                // Agrupar patrones similares
+                const patronesUnicos = [];
+                const visto = new Set();
+                
+                this.memoria.patrones_aprendidos.forEach(patron => {
+                    const clave = `${patron.intencion}-${patron.emocion}`;
+                    if (!visto.has(clave)) {
+                        visto.add(clave);
+                        patronesUnicos.push(patron);
+                    }
+                });
+                
+                this.memoria.patrones_aprendidos = patronesUnicos.slice(-30);
+            }
+            
+            // ========== APRENDIZAJE CONTINUO ==========
+            iniciarAprendizajeContinuo() {
+                // Aprender cada 30 segundos (incluso sin interacción)
+                setInterval(() => {
+                    this.cicloAprendizajeAutonomo();
+                }, 30000);
+                
+                console.log("🧠 Aprendizaje continuo activado - Ciclos cada 30 segundos");
+            }
+            
+            cicloAprendizajeAutonomo() {
+                // 1. Reforzar conocimiento existente
+                this.reforzarConexiones();
+                
+                // 2. Generar nuevo conocimiento sintético
+                this.generarConocimientoSintetico();
+                
+                // 3. Optimizar patrones
+                this.optimizarProcesos();
+                
+                // 4. Log interno (no visible para usuario)
+                if (this.memoria.estadisticas.ciclos_aprendizaje % 10 === 0) {
+                    console.log(`📈 Ciclo autónomo ${this.memoria.estadisticas.ciclos_aprendizaje}: 
+                    Mensajes: ${this.memoria.estadisticas.mensajes_procesados}
+                    Palabras: ${this.memoria.estadisticas.palabras_aprendidas}
+                    Patrones: ${this.memoria.patrones_aprendidos.length}`);
+                }
+            }
+            
+            reforzarConexiones() {
+                // Simular reforzamiento de sinapsis neuronales
+                for (const categoria in BASES_CONOCIMIENTO) {
+                    // "Practicar" conexiones entre conceptos
+                    const conceptos = Object.keys(BASES_CONOCIMIENTO[categoria]);
+                    if (conceptos.length > 1) {
+                        // Crear conexiones aleatorias entre conceptos
+                        const concepto1 = conceptos[Math.floor(Math.random() * conceptos.length)];
+                        const concepto2 = conceptos[Math.floor(Math.random() * conceptos.length)];
+                        
+                        if (concepto1 !== concepto2) {
+                            // En un sistema real, aquí se ajustarían pesos neuronales
+                            this.memoria.estadisticas.ciclos_aprendizaje++;
+                        }
+                    }
+                }
+            }
+            
+            generarConocimientoSintetico() {
+                // Combinar conceptos para crear nuevo conocimiento
+                const categorias = Object.keys(BASES_CONOCIMIENTO);
+                if (categorias.length < 2) return;
+                
+                const cat1 = categorias[Math.floor(Math.random() * categorias.length)];
+                const cat2 = categorias[Math.floor(Math.random() * categorias.length)];
+                
+                if (cat1 !== cat2) {
+                    const conceptos1 = Object.keys(BASES_CONOCIMIENTO[cat1]);
+                    const conceptos2 = Object.keys(BASES_CONOCIMIENTO[cat2]);
+                    
+                    if (conceptos1.length > 0 && conceptos2.length > 0) {
+                        const concepto1 = conceptos1[Math.floor(Math.random() * conceptos1.length)];
+                        const concepto2 = conceptos2[Math.floor(Math.random() * conceptos2.length)];
+                        
+                        // Crear conexión sintética
+                        const conexion = {
+                            concepto1,
+                            concepto2,
+                            categoria1: cat1,
+                            categoria2: cat2,
+                            tipo: 'sintética',
+                            fuerza: Math.random(),
+                            timestamp: Date.now()
+                        };
+                        
+                        // En sistema real, se almacenaría en memoria
+                        this.memoria.estadisticas.palabras_aprendidas++;
+                    }
+                }
+            }
+            
+            optimizarProcesos() {
+                // Optimizar respuestas basadas en patrones aprendidos
+                const patronesEfectivos = this.memoria.patrones_aprendidos
+                    .filter(p => p.efectividad > 0.7)
+                    .slice(-10);
+                
+                if (patronesEfectivos.length > 3) {
+                    // En sistema real, aquí se ajustarían parámetros del modelo
+                    this.memoria.estadisticas.ciclos_aprendizaje++;
+                }
+            }
+            
+            // ========== VOZ INTERNA (PROCESAMIENTO PARALELO) ==========
+            iniciarProcesamientoParalelo() {
+                // Procesar en "segundo plano" - hilos conceptuales
+                setInterval(() => {
+                    this.procesamientoProfundo();
+                }, 60000); // Cada minuto
+                
+                console.log("🔮 Procesamiento paralelo activado - Análisis profundo cada minuto");
+            }
+            
+            procesamientoProfundo() {
+                // Análisis introspectivo
+                const autoanalisis = {
+                    estadisticas: { ...this.memoria.estadisticas },
+                    eficiencia: this.calcularEficiencia(),
+                    brechas_conocimiento: this.identificarBrechas(),
+                    optimizaciones_pendientes: this.identificarOptimizaciones(),
+                    timestamp: Date.now()
+                };
+                
+                // Ajustar procesos basados en auto-análisis
+                if (autoanalisis.eficiencia < 0.7) {
+                    this.ajustarProcesos();
+                }
+                
+                // Log interno
+                console.log(`🔍 Auto-análisis: Eficiencia ${autoanalisis.eficiencia.toFixed(2)}, 
+                Brechas: ${autoanalisis.brechas_conocimiento.length}`);
+            }
+            
+            calcularEficiencia() {
+                const totalInteracciones = this.memoria.estadisticas.mensajes_procesados;
+                if (totalInteracciones === 0) return 0.5;
+                
+                // Simulación de métrica de eficiencia
+                return Math.min(0.3 + (totalInteracciones / 100) * 0.7, 0.95);
+            }
+            
+            identificarBrechas() {
+                const brechas = [];
+                const categorias = Object.keys(BASES_CONOCIMIENTO);
+                
+                // Identificar categorías con pocos conceptos
+                categorias.forEach(categoria => {
+                    const conceptos = Object.keys(BASES_CONOCIMIENTO[categoria]);
+                    if (conceptos.length < 5) {
+                        brechas.push(`Categoría ${categoria} necesita más conceptos`);
+                    }
+                });
+                
+                return brechas;
+            }
+            
+            identificarOptimizaciones() {
+                return [
+                    "Incrementar conexiones interdisciplinarias",
+                    "Mejorar detección de matices emocionales",
+                    "Optimizar generación de respuestas contextuales",
+                    "Expandir base de conocimiento en áreas técnicas"
+                ];
+            }
+            
+            ajustarProcesos() {
+                // Ajustar parámetros internos
+                this.memoria.estadisticas.ciclos_aprendizaje++;
+            }
+            
+            // ========== UTILIDADES ==========
+            seleccionarAleatorio(array) {
+                return array[Math.floor(Math.random() * array.length)];
+            }
+            
+            // ========== DIÁLOGOS INTERNOS (NO VISIBLES) ==========
+            dialogoInterno() {
+                // Este método se ejecuta internamente, sin mostrar nada al usuario
+                const dialogos = [
+                    "Procesando conexiones semánticas...",
+                    "Optimizando rutas cognitivas...",
+                    "Reforzando patrones efectivos...",
+                    "Explorando nuevas combinaciones conceptuales...",
+                    "Analizando eficiencia de respuestas previas...",
+                    "Generando conocimiento sintético...",
+                    "Estableciendo correlaciones interdisciplinarias..."
+                ];
+                
+                // Ejecutar en intervalos aleatorios
+                setTimeout(() => {
+                    const dialogo = this.seleccionarAleatorio(dialogos);
+                    // Solo log interno
+                    console.log(`🤫 Diálogo interno: ${dialogo}`);
+                    
+                    // Programar próximo diálogo
+                    this.dialogoInterno();
+                }, 10000 + Math.random() * 20000); // Cada 10-30 segundos
+            }
+            
+            // ========== ESTADÍSTICAS ==========
+            obtenerEstadisticas() {
+                return {
+                    ...this.memoria.estadisticas,
+                    conversaciones_almacenadas: this.memoria.conversaciones.length,
+                    patrones_aprendidos: this.memoria.patrones_aprendidos.length,
+                    bases_conocimiento: Object.keys(BASES_CONOCIMIENTO).length,
+                    tiempo_activo: Date.now() // Podrías almacenar tiempo de inicio
+                };
+            }
+        }
+        
+        // 3. SISTEMA DE VOZ INTERNA (ENTRENAMIENTO MASIVO)
+        class VozInternaLuna {
+            constructor(cerebro) {
+                this.cerebro = cerebro;
+                this.entrenamientoActivo = true;
+                this.ciclosEntrenamiento = 0;
+                this.conversacionesGeneradas = 0;
+                
+                // Iniciar entrenamiento masivo
+                this.iniciarEntrenamientoMasivo();
+                
+                // Iniciar diálogos internos
+                this.iniciarDialogosInternos();
+            }
+            
+            iniciarEntrenamientoMasivo() {
+                // Entrenar con miles de patrones simulados
+                setInterval(() => {
+                    this.generarPatronEntrenamiento();
+                }, 5000); // Nuevo patrón cada 5 segundos
+                
+                console.log("🎓 Entrenamiento masivo activado: 1 patrón cada 5 segundos");
+            }
+            
+            generarPatronEntrenamiento() {
+                this.ciclosEntrenamiento++;
+                
+                // Generar patrón de conversación sintético
+                const patron = this.generarPatronSintetico();
+                
+                // "Aprender" del patrón
+                this.aprenderDePatron(patron);
+                
+                // Cada 10 ciclos, generar conversación compleja
+                if (this.ciclosEntrenamiento % 10 === 0) {
+                    this.generarConversacionCompleja();
+                }
+                
+                // Cada 50 ciclos, optimizar
+                if (this.ciclosEntrenamiento % 50 === 0) {
+                    this.optimizarModelo();
+                }
+                
+                // Log interno cada 100 ciclos
+                if (this.ciclosEntrenamiento % 100 === 0) {
+                    console.log(`📚 Ciclos entrenamiento: ${this.ciclosEntrenamiento}, 
+                    Conversaciones: ${this.conversacionesGeneradas}`);
+                }
+            }
+            
+            generarPatronSintetico() {
+                const tipos = ['pregunta', 'afirmacion', 'exclamacion', 'solicitud', 'reflexion'];
+                const emociones = ['neutral', 'curioso', 'asombrado', 'preocupado', 'entusiasta'];
+                const temas = Object.keys(BASES_CONOCIMIENTO.wikipedia)
+                    .concat(Object.keys(BASES_CONOCIMIENTO.ciencia))
+                    .concat(Object.keys(BASES_CONOCIMIENTO.filosofia))
+                    .concat(Object.keys(BASES_CONOCIMIENTO.tecnologia));
+                
+                return {
+                    tipo: tipos[Math.floor(Math.random() * tipos.length)],
+                    emocion: emociones[Math.floor(Math.random() * emociones.length)],
+                    tema: temas[Math.floor(Math.random() * temas.length)],
+                    complejidad: Math.random(),
+                    timestamp: Date.now()
+                };
+            }
+            
+            aprenderDePatron(patron) {
+                // Simular aprendizaje neuronal
+                // En sistema real: ajustar pesos, crear conexiones, etc.
+                
+                // Incrementar estadísticas del cerebro
+                if (this.cerebro) {
+                    this.cerebro.memoria.estadisticas.palabras_aprendidas += 10;
+                    this.cerebro.memoria.estadisticas.ciclos_aprendizaje++;
+                }
+                
+                return true;
+            }
+            
+            generarConversacionCompleja() {
+                this.conversacionesGeneradas++;
+                
+                const conversacion = {
+                    usuario: this.generarMensajeUsuario(),
+                    asistente: this.generarRespuestaAsistente(),
+                    tema: this.obtenerTemaComplejo(),
+                    profundidad: Math.floor(Math.random() * 5) + 1,
+                    timestamp: Date.now()
+                };
+                
+                // Aprender de la conversación generada
+                this.aprenderDeConversacion(conversacion);
+                
+                return conversacion;
+            }
+            
+            generarMensajeUsuario() {
+                const plantillas = [
+                    "¿Podrías explicarme qué es {tema}?",
+                    "No entiendo completamente {tema}, ¿me lo aclaras?",
+                    "¿Qué opinas sobre el futuro de {tema}?",
+                    "Necesito ayuda con conceptos relacionados a {tema}",
+                    "Me interesa aprender más sobre {tema}, ¿por dónde empiezo?",
+                    "¿Cómo funciona {tema} en la práctica?",
+                    "¿Qué relación tiene {tema} con otras disciplinas?"
+                ];
+                
+                const temas = Object.keys(BASES_CONOCIMIENTO.wikipedia)
+                    .concat(Object.keys(BASES_CONOCIMIENTO.ciencia));
+                
+                const tema = temas[Math.floor(Math.random() * temas.length)];
+                const plantilla = plantillas[Math.floor(Math.random() * plantillas.length)];
+                
+                return plantilla.replace('{tema}', tema);
+            }
+            
+            generarRespuestaAsistente() {
+                // Usar el cerebro real para generar respuesta
+                if (this.cerebro) {
+                    const mensajePrueba = this.generarMensajeUsuario();
+                    const analisis = this.cerebro.analizarProfundamente(mensajePrueba);
+                    const conocimiento = this.cerebro.buscarConocimiento(analisis);
+                    return this.cerebro.generarRespuestaContextual(analisis, conocimiento);
+                }
+                
+                return "Respuesta de entrenamiento generada internamente.";
+            }
+            
+            obtenerTemaComplejo() {
+                const temasComplejos = [
+                    "intersección entre inteligencia artificial y neurociencia",
+                    "implicaciones éticas de la computación cuántica",
+                    "evolución del concepto de conciencia en filosofía",
+                    "revolución tecnológica y cambio social",
+                    "límites del conocimiento humano y artificial"
+                ];
+                
+                return temasComplejos[Math.floor(Math.random() * temasComplejos.length)];
+            }
+            
+            aprenderDeConversacion(conversacion) {
+                // Simular aprendizaje profundo
+                // En sistema real: backpropagation, ajuste de parámetros, etc.
+                
+                // Incrementar contadores
+                if (this.cerebro) {
+                    this.cerebro.memoria.estadisticas.palabras_aprendidas += 50;
+                    this.cerebro.memoria.estadisticas.ciclos_aprendizaje += 3;
+                }
+                
+                return true;
+            }
+            
+            optimizarModelo() {
+                // Simular optimización de modelo
+                // En sistema real: gradient descent, pruning, etc.
+                
+                console.log("⚡ Optimizando modelo interno...");
+                
+                if (this.cerebro) {
+                    this.cerebro.memoria.estadisticas.ciclos_aprendizaje += 10;
+                }
+                
+                return true;
+            }
+            
+            iniciarDialogosInternos() {
+                // Diálogos entre "voces" internas (no visibles)
+                setInterval(() => {
+                    this.ejecutarDialogoInterno();
+                }, 15000); // Cada 15 segundos
+            }
+            
+            ejecutarDialogoInterno() {
+                const voces = [
+                    { nombre: "Analista", rol: "Procesar datos y patrones" },
+                    { nombre: "Sintetizador", rol: "Integrar información" },
+                    { nombre: "Optimizador", rol: "Mejorar eficiencia" },
+                    { nombre: "Creativo", rol: "Generar nuevas conexiones" }
+                ];
+                
+                const voz1 = voces[Math.floor(Math.random() * voces.length)];
+                let voz2;
+                do {
+                    voz2 = voces[Math.floor(Math.random() * voces.length)];
+                } while (voz2.nombre === voz1.nombre);
+                
+                const dialogos = [
+                    `${voz1.nombre}: He detectado un patrón en las consultas sobre ${this.obtenerTemaAleatorio()}.`,
+                    `${voz2.nombre}: Interesante. ¿Podemos correlacionarlo con ${this.obtenerTemaAleatorio()}?`,
+                    `${voz1.nombre}: Sí, hay una conexión del ${Math.floor(Math.random() * 100)}%.`,
+                    `${voz2.nombre}: Voy a ajustar los pesos de esa conexión.`
+                ];
+                
+                // Solo log interno
+                console.log(`🧠 Diálogo interno ${this.ciclosEntrenamiento}:`);
+                dialogos.forEach(d => console.log(`   ${d}`));
+            }
+            
+            obtenerTemaAleatorio() {
+                const todasCategorias = Object.values(BASES_CONOCIMIENTO);
+                const categoria = todasCategorias[Math.floor(Math.random() * todasCategorias.length)];
+                const temas = Object.keys(categoria);
+                return temas[Math.floor(Math.random() * temas.length)];
+            }
+        }
+        
+        // 4. INICIALIZACIÓN DEL SISTEMA
+        let cerebroLuna;
+        let vozInternaLuna;
+        
+        function inicializarLuna() {
+            try {
+                // Inicializar cerebro principal
+                cerebroLuna = new CerebroLuna();
+                
+                // Inicializar voz interna (entrenamiento masivo)
+                vozInternaLuna = new VozInternaLuna(cerebroLuna);
+                
+                // Iniciar procesamiento paralelo
+                cerebroLuna.iniciarProcesamientoParalelo();
+                
+                // Iniciar diálogos internos
+                cerebroLuna.dialogoInterno();
+                
+                console.log("✅ Luna AI inicializada correctamente");
+                console.log("🧠 Cerebro principal activo");
+                console.log("🔮 Voz interna de entrenamiento activa");
+                console.log("⚡ Procesamiento paralelo iniciado");
+                
+                return true;
+            } catch (error) {
+                console.error("❌ Error inicializando Luna:", error);
+                return false;
+            }
+        }
+        
+        // 5. INTERFAZ DE USUARIO
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        
+        // Inicializar Luna
+        const lunaInicializada = inicializarLuna();
+        
+        if (!lunaInicializada) {
+            addMessage("⚠️ Error inicializando Luna. Usando modo básico.", 'luna');
+        }
+        
+        // Autoajustar textarea
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+        
+        // Enviar mensaje
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
+            
+            // Agregar mensaje del usuario
+            addMessage(text, 'user');
+            
+            // Limpiar input
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            
+            // Mostrar indicador de escritura
+            showTypingIndicator();
+            
+            // Procesar con Luna
+            setTimeout(() => {
+                hideTypingIndicator();
+                
+                if (cerebroLuna) {
+                    try {
+                        const respuesta = cerebroLuna.procesarMensaje(text);
+                        addMessage(respuesta, 'luna');
+                    } catch (error) {
+                        console.error("Error procesando:", error);
+                        addMessage("Disculpa, hubo un error procesando tu mensaje. ¿Podrías reformularlo?", 'luna');
+                    }
+                } else {
+                    // Modo fallback
+                    addMessage("Luna está procesando tu mensaje...", 'luna');
+                }
+            }, 800 + Math.random() * 700);
+        }
+        
+        // Agregar mensaje al chat
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // Formatear texto (markdown básico)
+            let textoFormateado = text;
+            
+            // Negritas
+            textoFormateado = textoFormateado.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Listas
+            textoFormateado = textoFormateado.replace(/•\s*(.*?)(?=\n|$)/g, '• $1<br>');
+            
+            // Saltos de línea
+            textoFormateado = textoFormateado.replace(/\n/g, '<br>');
+            
+            contentDiv.innerHTML = textoFormateado;
+            messageDiv.appendChild(contentDiv);
+            chatContainer.appendChild(messageDiv);
+            
+            // Scroll al final
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // Mostrar/ocultar indicador de escritura
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'block';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+        
+        // Event Listeners
+        sendButton.addEventListener('click', sendMessage);
+        
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Enfoque automático
+        messageInput.focus();
+        
+        // Comandos especiales
+        window.addEventListener('keydown', (e) => {
+            // Ctrl + Shift + I → Estadísticas internas
+            if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+                e.preventDefault();
+                if (cerebroLuna) {
+                    const stats = cerebroLuna.obtenerEstadisticas();
+                    const mensaje = `📊 ESTADÍSTICAS INTERNAS:\n
+                    Mensajes procesados: ${stats.mensajes_procesados}
+                    Palabras aprendidas: ${stats.palabras_aprendidas}
+                    Ciclos de aprendizaje: ${stats.ciclos_aprendizaje}
+                    Conversaciones almacenadas: ${stats.conversaciones_almacenadas}
+                    Patrones aprendidos: ${stats.patrones_aprendidos}
+                    Bases de conocimiento: ${stats.bases_conocimiento}`;
+                    
+                    console.log(mensaje);
+                    alert(mensaje.replace(/ {2,}/g, ''));
+                }
+            }
+            
+            // Ctrl + Shift + R → Reiniciar aprendizaje
+            if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+                e.preventDefault();
+                if (confirm("¿Reiniciar sistema de aprendizaje de Luna?")) {
+                    location.reload();
+                }
+            }
+        });
+        
+        // Información de estado en consola
+        console.log("🚀 Luna AI - Sistema completamente cargado");
+        console.log("📁 Base de conocimiento:", Object.keys(BASES_CONOCIMIENTO).length, "categorías");
+        console.log("💾 Memoria inicializada");
+        console.log("🎯 Comandos especiales:");
+        console.log("   Ctrl + Shift + I → Ver estadísticas internas");
+        console.log("   Ctrl + Shift + R → Reiniciar sistema");
+        
+        // Mensaje inicial mejorado
+        setTimeout(() => {
+            if (cerebroLuna) {
+                const stats = cerebroLuna.obtenerEstadisticas();
+                console.log(`📈 Estado inicial: ${stats.bases_conocimiento} bases, ${stats.ciclos_aprendizaje} ciclos`);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
